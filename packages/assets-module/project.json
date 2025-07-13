@@ -1,0 +1,26 @@
+{
+  "name": "assets-module",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/assets-module/src",
+  "projectType": "library",
+  "tags": ["scope:module"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/assets-module",
+        "main": "packages/assets-module/src/index.ts",
+        "tsConfig": "packages/assets-module/tsconfig.lib.json",
+        "assets": []
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "packages/assets-module/jest.config.ts"
+      }
+    }
+  }
+}

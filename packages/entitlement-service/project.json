@@ -1,0 +1,26 @@
+{
+  "name": "entitlement-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/entitlement-service/src",
+  "projectType": "library",
+  "tags": ["scope:service"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/entitlement-service",
+        "main": "packages/entitlement-service/src/index.ts",
+        "tsConfig": "packages/entitlement-service/tsconfig.lib.json",
+        "assets": []
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "packages/entitlement-service/jest.config.ts"
+      }
+    }
+  }
+}
