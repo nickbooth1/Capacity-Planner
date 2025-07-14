@@ -1,0 +1,44 @@
+// This is your Prisma schema file for shared-kernel base models
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/.prisma/shared-kernel"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public"]
+}
+
+// Base models in public schema
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique // IATA code
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  @@map("organizations")
+  @@schema("public")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String
+  organizationId String
+  role           String   // 'admin', 'asset_owner', 'requester', etc.
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  createdBy      String?
+  updatedBy      String?
+
+  @@map("users")
+  @@schema("public")
+}

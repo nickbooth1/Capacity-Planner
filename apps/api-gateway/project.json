@@ -12,7 +12,7 @@
         "platform": "node",
         "outputPath": "dist/apps/api-gateway",
         "format": ["cjs"],
-        "bundle": false,
+        "bundle": true,
         "main": "apps/api-gateway/src/main.ts",
         "tsConfig": "apps/api-gateway/tsconfig.app.json",
         "assets": ["apps/api-gateway/src/assets"],

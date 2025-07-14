@@ -1,0 +1,27 @@
+FROM node:20-alpine
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY nx.json tsconfig.base.json ./
+
+# Copy all workspace packages and apps to leverage pnpm workspace
+COPY packages ./packages
+COPY apps ./apps
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Expose Next.js dev server port
+EXPOSE 3000
+
+# Enable polling for file changes in Docker
+ENV WATCHPACK_POLLING=true
+
+# Start Next.js in development mode with hot reload
+CMD ["pnpm", "nx", "dev", "web"]

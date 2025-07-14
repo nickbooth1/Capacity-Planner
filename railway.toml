@@ -1,0 +1,20 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pnpm install --frozen-lockfile && pnpm prisma:generate && pnpm nx build api-gateway"
+
+[deploy]
+startCommand = "node dist/apps/api-gateway/main.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "api-gateway"
+buildCommand = "pnpm nx build api-gateway"
+startCommand = "node dist/apps/api-gateway/main.js"
+
+[[services]]
+name = "redis"
+image = "redis:7-alpine"
+volumes = ["/data"]

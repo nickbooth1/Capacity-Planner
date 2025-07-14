@@ -1,5 +1,8 @@
 # CapaCity Planner
 
+[![CI](https://github.com/nick/CapaCity-Planner/actions/workflows/ci.yml/badge.svg)](https://github.com/nick/CapaCity-Planner/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/nick/CapaCity-Planner/actions/workflows/docker-build.yml/badge.svg)](https://github.com/nick/CapaCity-Planner/actions/workflows/docker-build.yml)
+
 Airport capacity management platform for tracking and scheduling maintenance work on airport assets.
 
 ## Technology Stack

@@ -1,0 +1,15 @@
+{
+  "name": "@capacity-planner/assets-module",
+  "version": "0.0.1",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "prisma": {
+    "seed": "ts-node --transpile-only prisma/seed.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1"
+  }
+}

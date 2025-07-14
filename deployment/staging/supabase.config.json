@@ -1,0 +1,31 @@
+{
+  "projectId": "${SUPABASE_PROJECT_ID}",
+  "version": "1",
+  "name": "capacity-planner-staging",
+  "region": "us-east-1",
+  "pricing_tier": "free",
+  "db_settings": {
+    "db_name": "capacity_planner_staging",
+    "db_user": "postgres",
+    "db_pass": "${SUPABASE_DB_PASSWORD}",
+    "db_port": 5432,
+    "db_ssl_mode": "require"
+  },
+  "api_settings": {
+    "site_url": "https://capacity-planner-staging.vercel.app",
+    "jwt_secret": "${SUPABASE_JWT_SECRET}",
+    "anon_key": "${SUPABASE_ANON_KEY}",
+    "service_role_key": "${SUPABASE_SERVICE_ROLE_KEY}"
+  },
+  "auth": {
+    "enable_signup": true,
+    "enable_auto_confirm": false,
+    "enable_magic_link": true,
+    "enable_email_otp": true,
+    "external_providers": []
+  },
+  "storage": {
+    "file_size_limit": 52428800,
+    "allowed_mime_types": ["image/jpeg", "image/png", "application/pdf"]
+  }
+}

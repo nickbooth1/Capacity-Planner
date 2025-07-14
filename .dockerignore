@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+1.Docs
+docs
+
+# Development
+.env
+.env.*
+!.env.example
+.vscode
+.idea
+*.log
+*.swp
+.DS_Store
+
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+.next
+out
+tmp
+.nx
+
+# Testing
+coverage
+.nyc_output
+*.test.js
+*.spec.js
+__tests__
+__mocks__
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Scripts (except necessary ones)
+scripts/dev.sh
+scripts/test-*.sh
+
+# Docker
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile*
+!Dockerfile
+
+# Misc
+.editorconfig
+.eslintcache
+.prettierignore
+*.sql
+!scripts/init-database.sql

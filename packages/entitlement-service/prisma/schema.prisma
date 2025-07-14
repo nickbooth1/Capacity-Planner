@@ -1,0 +1,47 @@
+// Prisma schema for entitlement-service
+// Manages module access control in entitlement schema
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/.prisma/entitlement-service"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["entitlement"]
+}
+
+model Entitlement {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  moduleKey      String    @map("module_key") // 'assets', 'work', 'capacity'
+  status         String    @default("active") // 'active', 'suspended', 'expired'
+  validFrom      DateTime  @default(now()) @map("valid_from")
+  validUntil     DateTime? @map("valid_until")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdBy      String?   @map("created_by")
+  updatedBy      String?   @map("updated_by")
+
+  @@unique([organizationId, moduleKey])
+  @@map("entitlements")
+  @@schema("entitlement")
+}
+
+model EntitlementAudit {
+  id             String   @id @default(uuid())
+  entitlementId  String   @map("entitlement_id")
+  organizationId String   @map("organization_id")
+  moduleKey      String   @map("module_key")
+  action         String   // 'created', 'updated', 'suspended', 'reactivated'
+  previousValue  Json?    @map("previous_value")
+  newValue       Json?    @map("new_value")
+  performedBy    String   @map("performed_by")
+  performedAt    DateTime @default(now()) @map("performed_at")
+  reason         String?
+
+  @@map("entitlement_audits")
+  @@schema("entitlement")
+}

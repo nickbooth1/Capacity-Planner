@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "pnpm nx build web",
+  "outputDirectory": "dist/apps/web/.next",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "devCommand": "pnpm nx dev web",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@staging-api-url",
+    "NEXT_PUBLIC_SUPABASE_URL": "@staging-supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@staging-supabase-anon-key"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://capacity-planner-staging.railway.app/:path*"
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+// Prisma schema for work-module
+// Manages work requests and approvals in work schema
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/.prisma/work-module"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["work"]
+}
+
+model WorkRequest {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  assetId        String    @map("asset_id") // Reference to asset (no FK)
+  assetType      String    @map("asset_type") // 'stand', 'gate', etc.
+  assetCode      String    @map("asset_code") // Denormalized for performance
+  
+  // Request details
+  title          String
+  description    String    @db.Text
+  requestedBy    String    @map("requested_by") // User ID
+  requestorName  String    @map("requestor_name") // Denormalized
+  requestorEmail String    @map("requestor_email") // Denormalized
+  
+  // Work schedule
+  startDate      DateTime  @map("start_date")
+  endDate        DateTime  @map("end_date")
+  
+  // Status workflow
+  status         String    @default("draft") // 'draft', 'submitted', 'in_review', 'approved', 'rejected', 'cancelled', 'completed'
+  priority       String    @default("normal") // 'low', 'normal', 'high', 'urgent'
+  
+  // Impact assessment
+  impact         String?   @db.Text
+  affectedAreas  Json      @default("[]") @map("affected_areas")
+  
+  // Approval details
+  reviewedBy     String?   @map("reviewed_by")
+  reviewedAt     DateTime? @map("reviewed_at")
+  reviewerName   String?   @map("reviewer_name")
+  reviewComments String?   @map("review_comments") @db.Text
+  
+  // Attachments and metadata
+  attachments    Json      @default("[]")
+  metadata       Json      @default("{}")
+  
+  // Audit fields
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdBy      String?   @map("created_by")
+  updatedBy      String?   @map("updated_by")
+
+  @@index([organizationId, status])
+  @@index([assetId])
+  @@index([startDate, endDate])
+  @@map("work_requests")
+  @@schema("work")
+}
+
+model WorkRequestStatusHistory {
+  id            String   @id @default(uuid())
+  workRequestId String   @map("work_request_id")
+  fromStatus    String   @map("from_status")
+  toStatus      String   @map("to_status")
+  comments      String?  @db.Text
+  changedBy     String   @map("changed_by")
+  changedByName String   @map("changed_by_name")
+  changedAt     DateTime @default(now()) @map("changed_at")
+
+  @@map("work_request_status_history")
+  @@schema("work")
+}
+
+model WorkRequestComment {
+  id            String   @id @default(uuid())
+  workRequestId String   @map("work_request_id")
+  comment       String   @db.Text
+  commentedBy   String   @map("commented_by")
+  commenterName String   @map("commenter_name")
+  commentedAt  DateTime @default(now()) @map("commented_at")
+  isInternal    Boolean  @default(false) @map("is_internal") // Internal notes vs public comments
+
+  @@map("work_request_comments")
+  @@schema("work")
+}
+
+model WorkRequestNotification {
+  id            String    @id @default(uuid())
+  workRequestId String    @map("work_request_id")
+  recipientId   String    @map("recipient_id")
+  recipientEmail String   @map("recipient_email")
+  type          String    // 'submitted', 'approved', 'rejected', 'comment_added', etc.
+  subject       String
+  body          String    @db.Text
+  sentAt        DateTime? @map("sent_at")
+  failedAt      DateTime? @map("failed_at")
+  error         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@map("work_request_notifications")
+  @@schema("work")
+}
+
+model WorkRequestTemplate {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  name           String
+  description    String?
+  assetType      String   @map("asset_type")
+  defaultTitle   String   @map("default_title")
+  defaultDesc    String   @map("default_description") @db.Text
+  defaultImpact  String?  @map("default_impact") @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String?  @map("created_by")
+  updatedBy      String?  @map("updated_by")
+
+  @@map("work_request_templates")
+  @@schema("work")
+}

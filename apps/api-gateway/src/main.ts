@@ -1,6 +1,10 @@
 import express from 'express';
-import { MockEntitlementService } from '@capacity-planner/entitlement-service';
 import { HTTP_STATUS } from '@capacity-planner/shared-kernel';
+import {
+  getEntitlementService,
+  closeEntitlementService,
+} from './services/entitlement-service.factory';
+import { createEntitlementRoutes } from './routes/entitlements';
 
 const host = process.env.HOST ?? 'localhost';
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -8,32 +12,95 @@ const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 const app = express();
 app.use(express.json());
 
-// Initialize services (mock for now)
-const entitlementService = new MockEntitlementService();
+// Development logging middleware
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    next();
+  });
+}
+
+// Initialize services
+const entitlementService = getEntitlementService();
+
+// Mount entitlement routes
+app.use('/api/entitlements', createEntitlementRoutes(entitlementService));
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(HTTP_STATUS.OK).json({
-    status: 'ok',
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-  });
+app.get('/health', async (req, res) => {
+  try {
+    // Check if database is accessible
+    const dbHealthy = await entitlementService
+      .getAllEntitlements()
+      .then(() => true)
+      .catch(() => false);
+
+    res.status(HTTP_STATUS.OK).json({
+      status: 'ok',
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      services: {
+        database: dbHealthy ? 'healthy' : 'unhealthy',
+        redis: process.env.ENABLE_REDIS_CACHE === 'true' ? 'enabled' : 'disabled',
+      },
+    });
+  } catch (error) {
+    res.status(HTTP_STATUS.SERVICE_UNAVAILABLE).json({
+      status: 'error',
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
 });
 
 // API root
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'CapaCity Planner API Gateway',
     version: '1.0.0',
     endpoints: {
       health: '/health',
+      entitlements: '/api/entitlements',
       assets: '/api/assets',
       work: '/api/work',
-    }
+    },
+    services: {
+      useMockServices: process.env.USE_MOCK_SERVICES === 'true',
+      redisCache: process.env.ENABLE_REDIS_CACHE === 'true',
+    },
   });
 });
 
-app.listen(port, host, () => {
+const server = app.listen(port, host, () => {
   console.log(`🚀 API Gateway ready at http://${host}:${port}`);
+  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(
+    `🔄 Hot reload: ${process.env.ENABLE_HOT_RELOAD === 'true' ? 'enabled' : 'disabled'}`
+  );
 });
+
+// Graceful shutdown
+const gracefulShutdown = async () => {
+  console.log('Starting graceful shutdown...');
+
+  // Close HTTP server
+  server.close(async () => {
+    console.log('HTTP server closed');
+
+    // Close entitlement service connections
+    try {
+      await closeEntitlementService();
+      console.log('Entitlement service connections closed');
+    } catch (error) {
+      console.error('Error closing entitlement service:', error);
+    }
+
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);

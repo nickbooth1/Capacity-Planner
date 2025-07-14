@@ -1,0 +1,35 @@
+# CODEOWNERS file
+# This file defines who is responsible for code in this repository
+# These owners will be automatically requested for review when someone opens a pull request
+
+# Default owners for everything in the repo
+* @your-github-username
+
+# Frontend team owns the web app
+/apps/web/ @your-github-username @frontend-team
+
+# Backend team owns the API gateway
+/apps/api-gateway/ @your-github-username @backend-team
+
+# Architecture team owns shared packages
+/packages/ @your-github-username @architecture-team
+
+# DevOps team owns infrastructure and CI/CD
+/.github/ @your-github-username @devops-team
+/docker-compose*.yml @your-github-username @devops-team
+/Dockerfile* @your-github-username @devops-team
+/scripts/ @your-github-username @devops-team
+
+# Database team owns Prisma schemas and migrations
+/**/prisma/ @your-github-username @database-team
+/**/*.sql @your-github-username @database-team
+
+# Documentation
+/1.Docs/ @your-github-username
+/*.md @your-github-username
+/CONTRIBUTING.md @your-github-username @devops-team
+
+# Security-sensitive files
+/.env* @your-github-username @security-team
+/packages/shared-kernel/src/auth/ @your-github-username @security-team
+/packages/entitlement-service/ @your-github-username @security-team

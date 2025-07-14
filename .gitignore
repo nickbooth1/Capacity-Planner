@@ -23,6 +23,8 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.development
+.env.docker
 
 # Logs
 logs
@@ -48,3 +50,10 @@ out
 # Misc
 *.pem
 .cache
+
+# Prisma
+/generated/prisma
+.prisma
+*.db
+*.db-journal
+packages/**/prisma/migrations/*/
