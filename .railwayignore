@@ -1,7 +1,11 @@
 # Ignore Docker files to force Railway to use nixpacks
+Dockerfile
+Dockerfile.*
 **/Dockerfile
 **/Dockerfile.*
+**/*.Dockerfile
 docker-compose*.yml
+.dockerignore
 
 # Ignore local environment files
 .env
