@@ -1,0 +1,137 @@
+# Production Monitoring Alerts Configuration
+# ==========================================
+
+alerts:
+  # High Error Rate
+  - name: high_error_rate
+    description: "Error rate exceeds 1% for 5 minutes"
+    query: |
+      avg(last_5m):sum:app.errors{env:production}.as_rate() > 0.01
+    severity: critical
+    notify:
+      - "@pagerduty"
+      - "#alerts-critical"
+    
+  # High Response Time
+  - name: high_response_time
+    description: "95th percentile response time > 1s for 10 minutes"
+    query: |
+      avg(last_10m):p95:app.response_time{env:production} > 1000
+    severity: warning
+    notify:
+      - "#alerts-performance"
+    
+  # Database Connection Errors
+  - name: database_connection_failed
+    description: "Database connection failures detected"
+    query: |
+      sum(last_5m):sum:app.database.connection.errors{env:production} > 5
+    severity: critical
+    notify:
+      - "@pagerduty"
+      - "#alerts-database"
+    
+  # Memory Usage High
+  - name: high_memory_usage
+    description: "Memory usage above 85% for 15 minutes"
+    query: |
+      avg(last_15m):avg:system.mem.used{env:production} / avg:system.mem.total{env:production} > 0.85
+    severity: warning
+    notify:
+      - "#alerts-infrastructure"
+    
+  # CPU Usage High
+  - name: high_cpu_usage
+    description: "CPU usage above 80% for 15 minutes"
+    query: |
+      avg(last_15m):avg:system.cpu.user{env:production} > 80
+    severity: warning
+    notify:
+      - "#alerts-infrastructure"
+    
+  # Health Check Failed
+  - name: health_check_failed
+    description: "Health check endpoint not responding"
+    query: |
+      avg(last_5m):sum:synthetics.http.response.status_code{url:https://api.capacity-planner.com/health} != 200
+    severity: critical
+    notify:
+      - "@pagerduty"
+      - "#alerts-critical"
+    
+  # Deployment Failed
+  - name: deployment_failed
+    description: "Production deployment failed"
+    query: |
+      events('source:railway status:error env:production').rollup('count').last('5m') > 0
+    severity: critical
+    notify:
+      - "#deployments"
+      - "@deployment-team"
+    
+  # Database Query Slow
+  - name: slow_database_queries
+    description: "Database queries taking > 5s"
+    query: |
+      avg(last_10m):p95:app.database.query.duration{env:production} > 5000
+    severity: warning
+    notify:
+      - "#alerts-database"
+    
+  # Login Failures Spike
+  - name: login_failures_spike
+    description: "Unusual number of login failures"
+    query: |
+      sum(last_10m):sum:app.auth.login.failures{env:production} > 100
+    severity: warning
+    notify:
+      - "#alerts-security"
+    
+  # SSL Certificate Expiry
+  - name: ssl_cert_expiry_warning
+    description: "SSL certificate expires in < 30 days"
+    query: |
+      min(last_1h):tls.cert.days_until_expiry{domain:api.capacity-planner.com} < 30
+    severity: warning
+    notify:
+      - "#alerts-infrastructure"
+
+# Notification Channels
+notification_channels:
+  pagerduty:
+    type: pagerduty
+    integration_key: "${PAGERDUTY_INTEGRATION_KEY}"
+    
+  slack:
+    type: slack
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channels:
+      - name: "#alerts-critical"
+        severity: [critical]
+      - name: "#alerts-database"
+        topics: [database]
+      - name: "#alerts-performance"
+        topics: [performance]
+      - name: "#alerts-infrastructure"
+        topics: [infrastructure]
+      - name: "#alerts-security"
+        topics: [security]
+      - name: "#deployments"
+        topics: [deployment]
+
+# SLO Targets
+slos:
+  - name: api_availability
+    description: "API Gateway availability"
+    target: 99.9
+    window: 30d
+    
+  - name: response_time
+    description: "95th percentile response time < 500ms"
+    target: 95
+    window: 7d
+    
+  - name: error_rate
+    description: "Error rate < 0.1%"
+    target: 99.9
+    window: 7d

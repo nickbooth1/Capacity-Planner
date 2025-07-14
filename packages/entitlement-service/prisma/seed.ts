@@ -55,49 +55,6 @@ async function main() {
         });
       }
     }
-
-    // Heathrow only gets assets and work modules
-    if (org.code === 'LHR') {
-      const modules = ['assets', 'work'];
-
-      for (const moduleKey of modules) {
-        const entitlement = await prisma.entitlement.upsert({
-          where: {
-            organizationId_moduleKey: {
-              organizationId: org.id,
-              moduleKey: moduleKey,
-            },
-          },
-          update: {},
-          create: {
-            organizationId: org.id,
-            moduleKey: moduleKey,
-            status: 'active',
-            validUntil: new Date('2025-06-30'),
-            createdBy: 'system',
-            updatedBy: 'system',
-          },
-        });
-
-        console.log(`✅ Created entitlement: ${org.code} - ${moduleKey}`);
-
-        // Create audit entry
-        await prisma.entitlementAudit.create({
-          data: {
-            entitlementId: entitlement.id,
-            organizationId: org.id,
-            moduleKey: moduleKey,
-            action: 'created',
-            newValue: {
-              status: 'active',
-              validUntil: '2025-06-30',
-            },
-            performedBy: 'system',
-            reason: 'Initial setup',
-          },
-        });
-      }
-    }
   }
 
   console.log('✅ Entitlement seeding completed!');

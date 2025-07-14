@@ -1,0 +1,61 @@
+Production Deployment Checklist
+==============================
+
+[ ] 1. Supabase Production Database
+    [✓] Database created and migrations run
+    [✓] Initial data seeded
+    [ ] Backup schedule configured
+    [ ] Point-in-time recovery enabled
+
+[ ] 2. Railway Configuration
+    [ ] Create new service in Railway project
+    [ ] Copy environment variables from railway-env-production.txt
+    [ ] Connect GitHub repository to main branch
+    [ ] Configure custom domain (api.capacity-planner.com)
+    [ ] Enable automatic deployments
+
+[ ] 3. Vercel Configuration
+    [ ] Update environment variables:
+        - NEXT_PUBLIC_API_URL=https://your-railway-domain.up.railway.app
+        - NEXT_PUBLIC_SUPABASE_URL=https://xwyzzwaxaciuspjwdmbn.supabase.co
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3eXp6d2F4YWNpdXNwandkbWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI1MTc0ODcsImV4cCI6MjA2ODA5MzQ4N30.OGrXs3MxLEKN4HJr1kQKNyfhQCZEDdzA0KdaqUS9FXY
+    [ ] Ensure production branch is 'main'
+    [ ] Configure domain (if not done)
+
+[ ] 4. GitHub Repository
+    [ ] Create production branch protection rules
+    [ ] Require PR reviews before merge to main
+    [ ] Set up GitHub secrets for CI/CD
+
+[ ] 5. Monitoring
+    [ ] Set up error tracking (Sentry)
+    [ ] Configure uptime monitoring
+    [ ] Set up alerts
+
+[ ] 6. Security
+    [ ] Review all environment variables
+    [ ] Ensure no secrets in code
+    [ ] Test authentication flow
+    [ ] Verify CORS settings
+
+[ ] 7. Testing
+    [ ] Run full test suite
+    [ ] Test API endpoints manually
+    [ ] Verify database connectivity
+    [ ] Check health endpoints
+
+[ ] 8. DNS Configuration
+    [ ] Point api.capacity-planner.com to Railway
+    [ ] Verify SSL certificates
+    [ ] Test domain resolution
+
+[ ] 9. Documentation
+    [ ] Update README with production URLs
+    [ ] Document deployment process
+    [ ] Create incident response plan
+
+[ ] 10. Go Live
+    [ ] Deploy to Railway
+    [ ] Monitor logs for errors
+    [ ] Test all critical paths
+    [ ] Announce go-live to team

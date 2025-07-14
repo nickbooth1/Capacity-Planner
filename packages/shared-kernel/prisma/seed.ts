@@ -60,34 +60,6 @@ async function main() {
     console.log(`✅ Created user: ${user.name} (${user.role})`);
   }
 
-  // Create a second test organization - London Heathrow
-  const heathrowAirport = await prisma.organization.upsert({
-    where: { code: 'LHR' },
-    update: {},
-    create: {
-      name: 'London Heathrow Airport',
-      code: 'LHR',
-      createdBy: 'system',
-      updatedBy: 'system',
-    },
-  });
-
-  console.log('✅ Created organization:', heathrowAirport.name);
-
-  // Create one admin user for Heathrow
-  await prisma.user.upsert({
-    where: { email: 'admin@heathrow.com' },
-    update: {},
-    create: {
-      email: 'admin@heathrow.com',
-      name: 'James Brown',
-      role: 'admin',
-      organizationId: heathrowAirport.id,
-      createdBy: 'system',
-      updatedBy: 'system',
-    },
-  });
-
   console.log('✅ Shared-kernel seeding completed!');
 }
 

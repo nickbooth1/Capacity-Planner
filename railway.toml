@@ -1,13 +1,25 @@
 [build]
 builder = "nixpacks"
-buildCommand = "pnpm install --frozen-lockfile && pnpm prisma:generate && pnpm nx build api-gateway"
+buildCommand = "pnpm install --frozen-lockfile && pnpm prisma:generate && pnpm build:gateway"
 
 [deploy]
 startCommand = "node dist/apps/api-gateway/main.js"
 healthcheckPath = "/health"
-healthcheckTimeout = 60
+healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
+
+# Production-specific configuration
+[environments.production]
+  [environments.production.build]
+  buildCommand = "pnpm install --frozen-lockfile && pnpm prisma:generate && pnpm build:gateway:prod"
+  
+  [environments.production.deploy]
+  startCommand = "node dist/apps/api-gateway/main.js"
+  healthcheckPath = "/health"
+  healthcheckTimeout = 30
+  numReplicas = 2
+  region = "us-west1"
 
 [[services]]
 name = "api-gateway"

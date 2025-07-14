@@ -190,69 +190,6 @@ async function main() {
 
   console.log('✅ Updated stand 5 to maintenance status');
 
-  // Create some stands for Heathrow as well
-  const heathrowOrg = await sharedPrisma.organization.findUnique({
-    where: { code: 'LHR' },
-  });
-
-  if (heathrowOrg) {
-    // Create asset type for Heathrow
-    await prisma.assetType.upsert({
-      where: {
-        organizationId_key: {
-          organizationId: heathrowOrg.id,
-          key: 'stand',
-        },
-      },
-      update: {},
-      create: {
-        organizationId: heathrowOrg.id,
-        key: 'stand',
-        name: 'Aircraft Stand',
-        description: 'Aircraft parking position',
-        schema: {
-          type: 'object',
-          properties: {
-            aircraftSize: { type: 'string', enum: ['A', 'B', 'C', 'D', 'E', 'F'] },
-            hasPowerSupply: { type: 'boolean' },
-            hasGroundSupport: { type: 'boolean' },
-            maxWeight: { type: 'number' },
-          },
-        },
-        createdBy: 'system',
-        updatedBy: 'system',
-      },
-    });
-
-    // Create a few sample stands for Heathrow
-    const heathrowStands = [
-      { code: 'A1', name: 'Alpha 1', terminal: 'T5', aircraftSize: 'E' },
-      { code: 'A2', name: 'Alpha 2', terminal: 'T5', aircraftSize: 'E' },
-      { code: 'B1', name: 'Bravo 1', terminal: 'T5', aircraftSize: 'D' },
-    ];
-
-    for (const standData of heathrowStands) {
-      await prisma.stand.create({
-        data: {
-          organizationId: heathrowOrg.id,
-          code: standData.code,
-          name: standData.name,
-          terminal: standData.terminal,
-          status: 'operational',
-          capabilities: {
-            aircraftSize: standData.aircraftSize,
-            hasPowerSupply: true,
-            hasGroundSupport: true,
-            maxWeight: 380,
-          },
-          createdBy: 'system',
-          updatedBy: 'system',
-        },
-      });
-      console.log(`✅ Created Heathrow stand: ${standData.code}`);
-    }
-  }
-
   console.log('✅ Assets module seeding completed!');
 }
 
