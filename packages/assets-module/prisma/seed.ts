@@ -136,9 +136,10 @@ async function main() {
 
     const stand = await prisma.stand.upsert({
       where: {
-        organizationId_code: {
+        organizationId_code_isDeleted: {
           organizationId: manchesterOrg.id,
           code: standData.code,
+          isDeleted: false,
         },
       },
       update: {},
@@ -167,9 +168,10 @@ async function main() {
   // Create a few stands with different statuses
   await prisma.stand.update({
     where: {
-      organizationId_code: {
+      organizationId_code_isDeleted: {
         organizationId: manchesterOrg.id,
         code: '5',
+        isDeleted: false,
       },
     },
     data: {

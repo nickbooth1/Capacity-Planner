@@ -5,6 +5,10 @@ import {
   closeEntitlementService,
 } from './services/entitlement-service.factory';
 import { createEntitlementRoutes } from './routes/entitlements';
+import standsRouter from './routes/assets/stands-simple';
+import timelineRouter from './routes/assets/timeline';
+import workRequestsRouter from './routes/work-requests';
+import workRequestsAssetsRouter from './routes/work-requests-assets';
 
 const host = process.env.HOST ?? '0.0.0.0';
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -25,6 +29,14 @@ const entitlementService = getEntitlementService();
 
 // Mount entitlement routes
 app.use('/api/entitlements', createEntitlementRoutes(entitlementService));
+
+// Mount assets routes
+app.use('/api/assets/stands', standsRouter);
+app.use('/api/assets', timelineRouter);
+
+// Mount work request routes
+app.use('/api/work/requests', workRequestsRouter);
+app.use('/api/work/requests/assets', workRequestsAssetsRouter);
 
 // Health check endpoint
 app.get('/health', async (req, res) => {

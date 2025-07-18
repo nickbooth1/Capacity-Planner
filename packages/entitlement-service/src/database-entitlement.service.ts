@@ -1,4 +1,4 @@
-import { PrismaClient } from '.prisma/entitlement-service';
+import { PrismaClient } from './prisma';
 import { ModuleKey } from '@capacity-planner/shared-kernel';
 import { EntitlementService, Entitlement } from './index';
 
@@ -32,7 +32,7 @@ export class DatabaseEntitlementService implements EntitlementService {
     validUntil?: Date,
     userId?: string
   ): Promise<void> {
-    const existingEntitlement = await this.prisma.entitlement.findUnique({
+    const existingEntitlement: any = await this.prisma.entitlement.findUnique({
       where: {
         organizationId_moduleKey: {
           organizationId: orgId,
@@ -84,7 +84,7 @@ export class DatabaseEntitlementService implements EntitlementService {
       ]);
     } else {
       // Create new entitlement
-      await this.prisma.$transaction(async (tx) => {
+      await this.prisma.$transaction(async (tx: any) => {
         const newEntitlement = await tx.entitlement.create({
           data: {
             ...entitlementData,
@@ -111,7 +111,7 @@ export class DatabaseEntitlementService implements EntitlementService {
   }
 
   async revokeAccess(orgId: string, moduleKey: ModuleKey, userId?: string): Promise<void> {
-    const entitlement = await this.prisma.entitlement.findUnique({
+    const entitlement: any = await this.prisma.entitlement.findUnique({
       where: {
         organizationId_moduleKey: {
           organizationId: orgId,
@@ -167,7 +167,7 @@ export class DatabaseEntitlementService implements EntitlementService {
       },
     });
 
-    return dbEntitlements.map((e) => ({
+    return dbEntitlements.map((e: any) => ({
       organizationId: e.organizationId,
       moduleKey: e.moduleKey as ModuleKey,
       status: e.status as 'active' | 'suspended',
@@ -205,7 +205,7 @@ export class DatabaseEntitlementService implements EntitlementService {
       orderBy: [{ organizationId: 'asc' }, { moduleKey: 'asc' }],
     });
 
-    return dbEntitlements.map((e) => ({
+    return dbEntitlements.map((e: any) => ({
       organizationId: e.organizationId,
       moduleKey: e.moduleKey as ModuleKey,
       status: e.status as 'active' | 'suspended',

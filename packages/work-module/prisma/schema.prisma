@@ -16,75 +16,259 @@ datasource db {
 model WorkRequest {
   id             String    @id @default(uuid())
   organizationId String    @map("organization_id")
-  assetId        String    @map("asset_id") // Reference to asset (no FK)
-  assetType      String    @map("asset_type") // 'stand', 'gate', etc.
-  assetCode      String    @map("asset_code") // Denormalized for performance
   
-  // Request details
+  // Asset Integration (Generic)
+  assetId        String    @map("asset_id") // Reference to any asset table
+  assetType      String    @map("asset_type") // 'stand', 'airfield', 'baggage', 'terminal', etc.
+  assetSchema    String    @map("asset_schema") // 'assets', 'airfield', 'baggage', etc.
+  assetCode      String    @map("asset_code") // Denormalized for performance
+  assetName      String    @map("asset_name") // Denormalized for performance
+  assetLocation  String?   @map("asset_location") // Terminal, zone, area, etc.
+  assetMetadata  Json      @default("{}") @map("asset_metadata") // Asset-specific metadata
+  
+  // Request Classification
+  workType       String    @map("work_type") // 'maintenance', 'inspection', 'repair', 'modification', 'emergency'
+  category       String    // 'routine', 'corrective', 'preventive', 'emergency'
+  priority       String    @default("medium") // 'critical', 'high', 'medium', 'low'
+  urgency        String    @default("scheduled") // 'immediate', 'scheduled', 'routine'
+  impactLevel    String    @default("medium") @map("impact_level") // 'full_closure', 'partial_restriction', 'no_impact'
+  
+  // Request Details
   title          String
   description    String    @db.Text
-  requestedBy    String    @map("requested_by") // User ID
-  requestorName  String    @map("requestor_name") // Denormalized
-  requestorEmail String    @map("requestor_email") // Denormalized
+  locationDetails String?  @map("location_details") @db.Text // Specific location within asset
+  safetyConsiderations String? @map("safety_considerations") @db.Text // Safety hazards, PPE requirements
   
-  // Work schedule
-  startDate      DateTime  @map("start_date")
-  endDate        DateTime  @map("end_date")
+  // Scheduling
+  requestedStartDate DateTime @map("requested_start_date")
+  requestedEndDate   DateTime? @map("requested_end_date")
+  estimatedDurationMinutes Int? @map("estimated_duration_minutes")
+  deadline           DateTime? 
+  preferredTimeWindows Json @default("[]") @map("preferred_time_windows") // Array of time windows
+  blackoutPeriods    Json @default("[]") @map("blackout_periods") // Array of blackout periods
+  seasonalConstraints Json @default("{}") @map("seasonal_constraints") // Weather/seasonal constraints
   
-  // Status workflow
-  status         String    @default("draft") // 'draft', 'submitted', 'in_review', 'approved', 'rejected', 'cancelled', 'completed'
-  priority       String    @default("normal") // 'low', 'normal', 'high', 'urgent'
+  // Resource Requirements
+  estimatedPersonnelCount Int? @map("estimated_personnel_count")
+  requiredSkills     Json @default("[]") @map("required_skills") // Array of required skills
+  requiredEquipment  Json @default("[]") @map("required_equipment") // Array of required equipment
+  estimatedMaterialsCost Decimal? @map("estimated_materials_cost") @db.Decimal(10,2)
   
-  // Impact assessment
-  impact         String?   @db.Text
-  affectedAreas  Json      @default("[]") @map("affected_areas")
+  // Budget and Cost
+  budgetCode         String? @map("budget_code")
+  estimatedTotalCost Decimal? @map("estimated_total_cost") @db.Decimal(10,2)
+  costCenter         String? @map("cost_center")
+  purchaseOrderNumber String? @map("purchase_order_number")
+  vendorInformation  Json @default("{}") @map("vendor_information")
   
-  // Approval details
-  reviewedBy     String?   @map("reviewed_by")
-  reviewedAt     DateTime? @map("reviewed_at")
-  reviewerName   String?   @map("reviewer_name")
-  reviewComments String?   @map("review_comments") @db.Text
+  // Stakeholder Information
+  requestedBy        String @map("requested_by") // User ID
+  requestorName      String @map("requestor_name")
+  requestorEmail     String @map("requestor_email")
+  requestorPhone     String? @map("requestor_phone")
+  department         String?
+  primaryContactId   String? @map("primary_contact_id")
+  secondaryContactId String? @map("secondary_contact_id")
   
-  // Attachments and metadata
-  attachments    Json      @default("[]")
-  metadata       Json      @default("{}")
+  // Approval and Workflow
+  approvalRequired   Boolean @default(true) @map("approval_required")
+  approvalLevel      String @default("standard") @map("approval_level") // 'standard', 'elevated', 'executive'
+  currentApproverId  String? @map("current_approver_id")
+  approvalDeadline   DateTime? @map("approval_deadline")
+  
+  // Status and Lifecycle
+  status             String @default("draft") // 'draft', 'submitted', 'under_review', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed'
+  statusReason       String? @map("status_reason") @db.Text
+  submissionDate     DateTime? @map("submission_date")
+  reviewStartedDate  DateTime? @map("review_started_date")
+  approvedDate       DateTime? @map("approved_date")
+  completedDate      DateTime? @map("completed_date")
+  
+  // Regulatory and Compliance
+  regulatoryApprovalRequired Boolean @default(false) @map("regulatory_approval_required")
+  regulatoryReference String? @map("regulatory_reference")
+  complianceNotes    String? @map("compliance_notes") @db.Text
+  
+  // Attachments and Documentation
+  attachments        Json @default("[]") // Array of attachment metadata
+  relatedDocuments   Json @default("[]") @map("related_documents") // Array of related document references
+  
+  // Metadata and Versioning
+  version            Int @default(1)
+  isTemplate         Boolean @default(false) @map("is_template")
+  templateId         String? @map("template_id") // Reference to template used
+  metadata           Json @default("{}")
   
   // Audit fields
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  createdBy      String?   @map("created_by")
-  updatedBy      String?   @map("updated_by")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  createdBy          String @map("created_by")
+  updatedBy          String @map("updated_by")
+
+  // Relations
+  statusHistory      WorkRequestStatusHistory[]
+  comments           WorkRequestComment[]
+  notifications      WorkRequestNotification[]
+  approvals          WorkRequestApproval[]
+  attachmentFiles    WorkRequestAttachment[]
+  standAssociations  WorkRequestStandAssociation[]
+  assetAssociations  WorkRequestAssetAssociation[]
 
   @@index([organizationId, status])
-  @@index([assetId])
-  @@index([startDate, endDate])
+  @@index([assetId, assetType, status])
+  @@index([assetType, status])
+  @@index([requestedBy, status])
+  @@index([requestedStartDate, requestedEndDate])
+  @@index([priority, urgency, status])
+  @@index([currentApproverId, status])
+  @@index([createdAt])
+  @@index([submissionDate])
   @@map("work_requests")
+  @@schema("work")
+}
+
+model WorkRequestAssetAssociation {
+  id              String   @id @default(uuid())
+  workRequestId   String   @map("work_request_id")
+  assetId         String   @map("asset_id") // Reference to any asset table
+  assetType       String   @map("asset_type") // 'stand', 'airfield', 'baggage', etc.
+  assetSchema     String   @map("asset_schema") // Schema where asset resides
+  assetCode       String   @map("asset_code") // Denormalized
+  assetName       String   @map("asset_name") // Denormalized
+  associationType String   @default("primary") @map("association_type") // 'primary', 'secondary', 'affected'
+  impactLevel     String   @default("medium") @map("impact_level") // 'full_closure', 'partial_restriction', 'no_impact'
+  specificAreas   Json     @default("[]") @map("specific_areas") // Array of specific areas within asset
+  constraints     Json     @default("{}") // Asset-specific constraints
+  createdAt       DateTime @default(now()) @map("created_at")
+  createdBy       String   @map("created_by")
+  
+  workRequest     WorkRequest @relation(fields: [workRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([workRequestId, assetId, assetType])
+  @@index([workRequestId])
+  @@index([assetId, assetType])
+  @@index([assetType])
+  @@map("work_request_asset_associations")
+  @@schema("work")
+}
+
+model WorkRequestStandAssociation {
+  id              String   @id @default(uuid())
+  workRequestId   String   @map("work_request_id")
+  standId         String   @map("stand_id") // Reference to assets.stands.id
+  standCode       String   @map("stand_code") // Denormalized
+  associationType String   @default("primary") @map("association_type") // 'primary', 'secondary', 'affected'
+  impactLevel     String   @default("medium") @map("impact_level") // 'full_closure', 'partial_restriction', 'no_impact'
+  specificAreas   Json     @default("[]") @map("specific_areas") // Array of specific areas within stand
+  constraints     Json     @default("{}") // Stand-specific constraints
+  createdAt       DateTime @default(now()) @map("created_at")
+  createdBy       String   @map("created_by")
+  
+  workRequest     WorkRequest @relation(fields: [workRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([workRequestId, standId])
+  @@index([workRequestId])
+  @@index([standId])
+  @@map("work_request_stand_associations")
+  @@schema("work")
+}
+
+model WorkRequestAttachment {
+  id              String    @id @default(uuid())
+  workRequestId   String    @map("work_request_id")
+  fileName        String    @map("file_name")
+  originalName    String    @map("original_name")
+  fileSize        BigInt    @map("file_size")
+  mimeType        String    @map("mime_type")
+  filePath        String    @map("file_path")
+  fileHash        String    @map("file_hash") // SHA-256 hash
+  isSecure        Boolean   @default(false) @map("is_secure")
+  encryptionKeyId String?   @map("encryption_key_id") // Reference to encryption key
+  virusScanStatus String    @default("pending") @map("virus_scan_status") // 'pending', 'clean', 'infected', 'error'
+  virusScanDate   DateTime? @map("virus_scan_date")
+  uploadedBy      String    @map("uploaded_by")
+  uploadedAt      DateTime  @default(now()) @map("uploaded_at")
+  
+  workRequest     WorkRequest @relation(fields: [workRequestId], references: [id], onDelete: Cascade)
+
+  @@index([workRequestId])
+  @@index([virusScanStatus, virusScanDate])
+  @@map("work_request_attachments")
   @@schema("work")
 }
 
 model WorkRequestStatusHistory {
   id            String   @id @default(uuid())
   workRequestId String   @map("work_request_id")
-  fromStatus    String   @map("from_status")
+  fromStatus    String?  @map("from_status")
   toStatus      String   @map("to_status")
+  reason        String?  @db.Text
   comments      String?  @db.Text
   changedBy     String   @map("changed_by")
   changedByName String   @map("changed_by_name")
   changedAt     DateTime @default(now()) @map("changed_at")
+  metadata      Json     @default("{}")
 
+  workRequest   WorkRequest @relation(fields: [workRequestId], references: [id], onDelete: Cascade)
+
+  @@index([workRequestId, changedAt])
+  @@index([changedBy, changedAt])
   @@map("work_request_status_history")
   @@schema("work")
 }
 
-model WorkRequestComment {
-  id            String   @id @default(uuid())
-  workRequestId String   @map("work_request_id")
-  comment       String   @db.Text
-  commentedBy   String   @map("commented_by")
-  commenterName String   @map("commenter_name")
-  commentedAt  DateTime @default(now()) @map("commented_at")
-  isInternal    Boolean  @default(false) @map("is_internal") // Internal notes vs public comments
+model WorkRequestApproval {
+  id            String    @id @default(uuid())
+  workRequestId String    @map("work_request_id")
+  approverId    String    @map("approver_id")
+  approverName  String    @map("approver_name")
+  approverRole  String    @map("approver_role")
+  approvalLevel String    @map("approval_level") // 'standard', 'elevated', 'executive'
+  sequenceOrder Int       @map("sequence_order")
+  status        String    @default("pending") // 'pending', 'approved', 'rejected', 'delegated'
+  decisionDate  DateTime? @map("decision_date")
+  comments      String?   @db.Text
+  conditions    String?   @db.Text // Approval conditions
+  delegatedTo   String?   @map("delegated_to") // If delegated
+  isRequired    Boolean   @default(true) @map("is_required")
+  timeoutDate   DateTime? @map("timeout_date")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  workRequest   WorkRequest @relation(fields: [workRequestId], references: [id], onDelete: Cascade)
 
+  @@unique([workRequestId, approverId, sequenceOrder])
+  @@index([workRequestId, sequenceOrder])
+  @@index([approverId, status])
+  @@index([timeoutDate])
+  @@map("work_request_approvals")
+  @@schema("work")
+}
+
+model WorkRequestComment {
+  id               String    @id @default(uuid())
+  workRequestId    String    @map("work_request_id")
+  parentCommentId  String?   @map("parent_comment_id")
+  commentText      String    @map("comment_text") @db.Text
+  commentType      String    @default("general") @map("comment_type") // 'general', 'approval', 'technical', 'internal'
+  isInternal       Boolean   @default(false) @map("is_internal")
+  isSystemGenerated Boolean  @default(false) @map("is_system_generated")
+  mentionedUsers   Json      @default("[]") @map("mentioned_users") // Array of mentioned user IDs
+  attachments      Json      @default("[]") // Array of attachment references
+  
+  // Audit Fields
+  commentedBy      String    @map("commented_by")
+  commenterName    String    @map("commenter_name")
+  commentedAt      DateTime  @default(now()) @map("commented_at")
+  editedAt         DateTime? @map("edited_at")
+  editedBy         String?   @map("edited_by")
+
+  workRequest      WorkRequest @relation(fields: [workRequestId], references: [id], onDelete: Cascade)
+  parentComment    WorkRequestComment? @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies          WorkRequestComment[] @relation("CommentReplies")
+
+  @@index([workRequestId, commentedAt])
+  @@index([commentedBy, commentedAt])
+  @@index([parentCommentId])
   @@map("work_request_comments")
   @@schema("work")
 }
@@ -94,14 +278,31 @@ model WorkRequestNotification {
   workRequestId String    @map("work_request_id")
   recipientId   String    @map("recipient_id")
   recipientEmail String   @map("recipient_email")
-  type          String    // 'submitted', 'approved', 'rejected', 'comment_added', etc.
+  notificationType String @map("notification_type") // 'submitted', 'approved', 'rejected', 'comment_added', 'status_changed'
   subject       String
   body          String    @db.Text
+  priority      String    @default("normal") // 'high', 'normal', 'low'
+  
+  // Delivery Status
+  status        String    @default("pending") // 'pending', 'sent', 'delivered', 'failed', 'bounced'
   sentAt        DateTime? @map("sent_at")
+  deliveredAt   DateTime? @map("delivered_at")
   failedAt      DateTime? @map("failed_at")
-  error         String?
+  retryCount    Int       @default(0) @map("retry_count")
+  errorMessage  String?   @map("error_message") @db.Text
+  
+  // Metadata
+  channel       String    @default("email") // 'email', 'sms', 'push', 'in_app'
+  templateId    String?   @map("template_id")
+  variables     Json      @default("{}")
   createdAt     DateTime  @default(now()) @map("created_at")
 
+  workRequest   WorkRequest @relation(fields: [workRequestId], references: [id], onDelete: Cascade)
+
+  @@index([workRequestId])
+  @@index([recipientId, status])
+  @@index([status, createdAt])
+  @@index([status, retryCount])
   @@map("work_request_notifications")
   @@schema("work")
 }
@@ -110,17 +311,132 @@ model WorkRequestTemplate {
   id             String   @id @default(uuid())
   organizationId String   @map("organization_id")
   name           String
-  description    String?
-  assetType      String   @map("asset_type")
-  defaultTitle   String   @map("default_title")
-  defaultDesc    String   @map("default_description") @db.Text
-  defaultImpact  String?  @map("default_impact") @db.Text
+  description    String?  @db.Text
+  category       String
+  workType       String   @map("work_type")
+  
+  // Template Configuration
+  templateData   Json     @map("template_data") // Complete template structure
+  defaultValues  Json     @default("{}") @map("default_values") // Default field values
+  requiredFields Json     @default("[]") @map("required_fields") // Array of required field names
+  conditionalLogic Json   @default("{}") @map("conditional_logic") // Field visibility/requirement logic
+  
+  // Usage and Permissions
   isActive       Boolean  @default(true) @map("is_active")
+  isPublic       Boolean  @default(false) @map("is_public") // Available to all users in org
+  usageCount     Int      @default(0) @map("usage_count")
+  createdBy      String   @map("created_by")
+  allowedRoles   Json     @default("[]") @map("allowed_roles") // Array of roles that can use template
+  
+  // Audit Fields
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
-  createdBy      String?  @map("created_by")
-  updatedBy      String?  @map("updated_by")
+  updatedBy      String   @map("updated_by")
 
+  @@unique([organizationId, name])
+  @@index([organizationId, isActive])
+  @@index([category, isActive])
+  @@index([usageCount])
   @@map("work_request_templates")
+  @@schema("work")
+}
+
+model AssetTypeConfiguration {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  assetType      String   @map("asset_type") // 'stand', 'airfield', 'baggage', etc.
+  assetSchema    String   @map("asset_schema") // Database schema
+  assetTable     String   @map("asset_table") // Table name
+  displayName    String   @map("display_name") // User-friendly name
+  description    String?  @db.Text
+  
+  // Form Configuration
+  formConfig     Json     @map("form_config") // Form field configurations
+  validationRules Json    @default("{}") @map("validation_rules") // Validation rules
+  workflowConfig Json     @default("{}") @map("workflow_config") // Approval workflow configuration
+  
+  // Integration Configuration
+  apiEndpoints   Json     @default("{}") @map("api_endpoints") // API endpoints for this asset type
+  permissions    Json     @default("[]") // Required permissions
+  
+  // Status and Metadata
+  isActive       Boolean  @default(true) @map("is_active")
+  sortOrder      Int      @default(0) @map("sort_order")
+  metadata       Json     @default("{}")
+  
+  // Audit Fields
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String   @map("created_by")
+  updatedBy      String   @map("updated_by")
+
+  @@unique([organizationId, assetType])
+  @@index([organizationId, isActive])
+  @@index([assetType, isActive])
+  @@map("asset_type_configurations")
+  @@schema("work")
+}
+
+model SavedView {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  name           String
+  description    String?  @db.Text
+  
+  // View Configuration
+  filters        Json     @default("{}") // WorkRequestFilters
+  sortOptions    Json?    @map("sort_options") // Array of SortOptions
+  columns        Json     @default("[]") // Array of column names
+  
+  // View Settings
+  isDefault      Boolean  @default(false) @map("is_default")
+  isShared       Boolean  @default(false) @map("is_shared")
+  
+  // Audit Fields
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String   @map("created_by")
+
+  @@unique([organizationId, name, createdBy])
+  @@index([organizationId, createdBy])
+  @@index([organizationId, isShared])
+  @@map("saved_views")
+  @@schema("work")
+}
+
+model AuditTrail {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  
+  // Entity Information
+  entityType     String   @map("entity_type") // WorkRequest, Security, etc.
+  entityId       String   @map("entity_id")
+  action         String   // create, update, delete, approve, reject, etc.
+  
+  // Actor Information
+  actorId        String   @map("actor_id")
+  actorName      String   @map("actor_name")
+  actorEmail     String   @map("actor_email")
+  actorRole      String   @map("actor_role")
+  
+  // Event Details
+  timestamp      DateTime @default(now())
+  changes        Json?    // What changed
+  metadata       Json?    // Additional context
+  
+  // Request Information
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent") @db.Text
+  sessionId      String?  @map("session_id")
+  
+  // Result
+  result         String   // success, failure
+  errorMessage   String?  @map("error_message") @db.Text
+
+  @@index([organizationId, entityType, entityId])
+  @@index([organizationId, actorId])
+  @@index([timestamp])
+  @@index([organizationId, timestamp])
+  @@map("audit_trail")
   @@schema("work")
 }

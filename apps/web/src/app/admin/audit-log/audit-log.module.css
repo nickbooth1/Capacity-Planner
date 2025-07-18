@@ -1,0 +1,218 @@
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.title {
+  margin-bottom: 2rem;
+  color: #111827;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.filters {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 150px;
+}
+
+.filterGroup label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.select,
+.input {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.clearButton {
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  align-self: flex-end;
+}
+
+.clearButton:hover {
+  background-color: #e5e7eb;
+}
+
+.tableContainer {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.loading {
+  padding: 3rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 1rem;
+  background-color: #f9fafb;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  color: #374151;
+  vertical-align: top;
+}
+
+.table tr:hover {
+  background-color: #f9fafb;
+}
+
+.dateCell {
+  white-space: nowrap;
+  font-size: 0.875rem;
+}
+
+.entityInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.entityType {
+  font-weight: 500;
+  color: #111827;
+}
+
+.entityId {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.action {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.actionCreate {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.actionUpdate {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.actionDelete {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.actionLogin {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+}
+
+.changes {
+  font-size: 0.875rem;
+}
+
+.changeKey {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.changeValue {
+  color: #111827;
+}
+
+.ipCell {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.emptyState {
+  padding: 3rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pageInfo {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.pageButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pageButton {
+  padding: 0.5rem 1rem;
+  background-color: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pageButton:hover:not(:disabled) {
+  background-color: #f9fafb;
+}
+
+.pageButton:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}

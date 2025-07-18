@@ -65,6 +65,7 @@ services:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3000
       WATCHPACK_POLLING: true
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/capacity_planner
     ports:
       - "4200:3000"
     volumes:

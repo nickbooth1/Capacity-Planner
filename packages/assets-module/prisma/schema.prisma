@@ -19,10 +19,19 @@ model Stand {
   code           String   // e.g., "A1", "B15"
   name           String   // e.g., "Alpha 1"
   terminal       String?  // Terminal assignment
+  pier           String?  // Pier assignment within terminal
   status         String   @default("operational") // 'operational', 'maintenance', 'closed'
   
-  // Capabilities as JSON
+  // DEPRECATED: Old capabilities field - to be migrated
   capabilities   Json     @default("{}") // aircraftSize, hasPowerSupply, hasGroundSupport, maxWeight
+  
+  // New capability fields (JSONB)
+  dimensions             Json?    @map("dimensions") // length, width, height, slope, surface type
+  aircraftCompatibility  Json?    @map("aircraft_compatibility") // ICAO categories, specific aircraft, wingspan, length
+  groundSupport          Json?    @map("ground_support") // power, air, fuel, deicing capabilities
+  operationalConstraints Json?    @map("operational_constraints") // time restrictions, weather limits, special procedures
+  environmentalFeatures  Json?    @map("environmental_features") // noise levels, emissions limits, sustainability features
+  infrastructure         Json?    @map("infrastructure") // jetbridge info, fixed equipment, structural limitations
   
   // Geometry for map display (GeoJSON format)
   geometry       Json?
@@ -34,13 +43,29 @@ model Stand {
   // Additional metadata
   metadata       Json     @default("{}")
   
+  // CRUD Controls fields
+  version        Int      @default(1) // Optimistic locking
+  isDeleted      Boolean  @default(false) @map("is_deleted") // Soft delete
+  deletedAt      DateTime? @map("deleted_at")
+  deletedBy      String?  @map("deleted_by")
+  
   // Audit fields
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
   createdBy      String?  @map("created_by")
   updatedBy      String?  @map("updated_by")
 
-  @@unique([organizationId, code])
+  // Relations
+  maintenanceRecords StandMaintenanceRecord[]
+  adjacentStands     StandAdjacency[] @relation("StandAdjacencies")
+  adjacentTo         StandAdjacency[] @relation("AdjacentToStand")
+  capabilitySnapshots StandCapabilitySnapshot[]
+
+  @@unique([organizationId, code, isDeleted])
+  @@index([organizationId, status, isDeleted])
+  @@index([organizationId, terminal, isDeleted])
+  @@index([organizationId, createdAt])
+  @@index([isDeleted, deletedAt])
   @@map("stands")
   @@schema("assets")
 }
@@ -55,6 +80,29 @@ model StandStatusHistory {
   changedAt  DateTime @default(now()) @map("changed_at")
 
   @@map("stand_status_history")
+  @@schema("assets")
+}
+
+// Stand bulk import job tracking
+model StandImportJob {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  filename       String   @db.VarChar(255)
+  fileUrl        String   @map("file_url") @db.Text
+  status         String   @default("pending") @db.VarChar(20) // 'pending', 'processing', 'completed', 'failed'
+  totalRows      Int      @default(0) @map("total_rows")
+  processedRows  Int      @default(0) @map("processed_rows")
+  successRows    Int      @default(0) @map("success_rows")
+  errorRows      Int      @default(0) @map("error_rows")
+  errors         Json     @default("[]")
+  startedAt      DateTime? @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  
+  @@index([organizationId, status, createdAt])
+  @@index([createdAt])
+  @@map("stand_import_jobs")
   @@schema("assets")
 }
 
@@ -94,5 +142,145 @@ model Asset {
 
   @@unique([organizationId, assetTypeId, code])
   @@map("assets")
+  @@schema("assets")
+}
+
+// Stand capability template for bulk updates
+model StandCapabilityTemplate {
+  id                    String   @id @default(uuid())
+  organizationId        String   @map("organization_id")
+  name                  String
+  description           String?
+  icaoCategory          String?  @map("icao_category") // Target ICAO category
+  dimensions            Json?    // Template dimensions
+  aircraftCompatibility Json?    @map("aircraft_compatibility") // Template compatibility
+  groundSupport         Json?    @map("ground_support") // Template ground support
+  operationalConstraints Json?   @map("operational_constraints") // Template constraints
+  environmentalFeatures Json?    @map("environmental_features") // Template environmental
+  infrastructure        Json?    // Template infrastructure
+  isActive              Boolean  @default(true) @map("is_active")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  createdBy             String?  @map("created_by")
+  updatedBy             String?  @map("updated_by")
+
+  @@unique([organizationId, name])
+  @@map("stand_capability_templates")
+  @@schema("assets")
+}
+
+// Stand utilization patterns for analysis
+model StandUtilizationPattern {
+  id             String   @id @default(uuid())
+  standId        String   @map("stand_id")
+  organizationId String   @map("organization_id")
+  periodStart    DateTime @map("period_start")
+  periodEnd      DateTime @map("period_end")
+  occupancyRate  Float    @map("occupancy_rate") // Percentage
+  turnAroundTime Float    @map("turn_around_time") // Average in minutes
+  aircraftTypes  Json     @map("aircraft_types") // Array of aircraft types
+  peakHours      Json     @map("peak_hours") // Array of peak hour ranges
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([standId, periodStart, periodEnd])
+  @@map("stand_utilization_patterns")
+  @@schema("assets")
+}
+
+// Stand maintenance records
+model StandMaintenanceRecord {
+  id                String   @id @default(uuid())
+  standId           String   @map("stand_id")
+  organizationId    String   @map("organization_id")
+  maintenanceType   String   @map("maintenance_type") // 'routine', 'corrective', 'preventive', 'emergency'
+  status            String   @default("scheduled") // 'scheduled', 'in_progress', 'completed', 'cancelled'
+  scheduledStart    DateTime @map("scheduled_start")
+  scheduledEnd      DateTime @map("scheduled_end")
+  actualStart       DateTime? @map("actual_start")
+  actualEnd         DateTime? @map("actual_end")
+  description       String?
+  workPerformed     String?  @map("work_performed")
+  cost              Float?
+  impactLevel       String   @default("medium") @map("impact_level") // 'low', 'medium', 'high', 'critical'
+  affectedCapabilities Json?  @map("affected_capabilities") // Which capabilities are affected
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  createdBy         String?  @map("created_by")
+  updatedBy         String?  @map("updated_by")
+
+  stand Stand @relation(fields: [standId], references: [id])
+
+  @@index([standId, scheduledStart, scheduledEnd])
+  @@index([organizationId, status])
+  @@map("stand_maintenance_records")
+  @@schema("assets")
+}
+
+// Stand adjacency relationships
+model StandAdjacency {
+  id              String   @id @default(uuid())
+  standId         String   @map("stand_id")
+  adjacentStandId String   @map("adjacent_stand_id")
+  adjacencyType   String   @map("adjacency_type") // 'physical', 'operational', 'taxiway_shared'
+  impactLevel     String   @map("impact_level") // 'low', 'medium', 'high'
+  constraints     Json?    // Operational constraints when both stands are in use
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  stand         Stand @relation("StandAdjacencies", fields: [standId], references: [id])
+  adjacentStand Stand @relation("AdjacentToStand", fields: [adjacentStandId], references: [id])
+
+  @@unique([standId, adjacentStandId])
+  @@index([adjacentStandId])
+  @@map("stand_adjacencies")
+  @@schema("assets")
+}
+
+// Stand capability snapshots for audit trail
+model StandCapabilitySnapshot {
+  id                   String   @id @default(uuid())
+  standId              String   @map("stand_id")
+  organizationId       String   @map("organization_id")
+  snapshotType         String   @map("snapshot_type") // 'manual', 'automated', 'migration'
+  previousCapabilities Json     @map("previous_capabilities")
+  newCapabilities      Json     @map("new_capabilities")
+  changedFields        Json     @map("changed_fields") // Array of field names that changed
+  validationResults    Json?    @map("validation_results")
+  reason               String?
+  templateId           String?  @map("template_id") // If applied from template
+  createdAt            DateTime @default(now()) @map("created_at")
+  createdBy            String?  @map("created_by")
+
+  stand Stand @relation(fields: [standId], references: [id])
+
+  @@index([standId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("stand_capability_snapshots")
+  @@schema("assets")
+}
+
+// Audit events for security and compliance tracking
+model AuditEvent {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  userId         String   @map("user_id")
+  eventType      String   @map("event_type") // 'capability_created', 'capability_updated', etc.
+  severity       String   // 'low', 'medium', 'high', 'critical'
+  resource       String   // 'stand', 'template', 'maintenance_record', etc.
+  resourceId     String   @map("resource_id")
+  action         String   // 'create', 'update', 'delete', 'validate', etc.
+  details        Json     @default("{}")
+  metadata       Json     @default("{}")
+  timestamp      DateTime @default(now())
+  success        Boolean  @default(true)
+  errorMessage   String?  @map("error_message")
+  
+  @@index([organizationId, timestamp])
+  @@index([organizationId, userId])
+  @@index([organizationId, eventType])
+  @@index([organizationId, resource, resourceId])
+  @@index([organizationId, severity])
+  @@index([timestamp])
+  @@map("audit_events")
   @@schema("assets")
 }

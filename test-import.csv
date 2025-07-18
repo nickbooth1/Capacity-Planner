@@ -1,0 +1,4 @@
+name,code,modules
+"Paris Charles de Gaulle",CDG,"assets,work"
+"Frankfurt Airport",FRA,"assets,work,capacity"
+"Amsterdam Airport Schiphol",AMS,"assets,work,capacity,planning"

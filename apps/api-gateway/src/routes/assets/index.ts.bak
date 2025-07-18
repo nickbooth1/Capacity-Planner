@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import standsRouter from './stands';
+import maintenanceRouter from './maintenance';
+import adjacencyRouter from './adjacency';
+import templatesRouter from './templates';
+
+const router = Router();
+
+// Mount asset-related routes
+router.use('/stands', standsRouter);
+router.use('/stands', maintenanceRouter);
+router.use('/stands', adjacencyRouter);
+router.use('/capability-templates', templatesRouter);
+
+export default router;

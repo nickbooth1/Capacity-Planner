@@ -1,0 +1,266 @@
+groups:
+  - name: assets-module-performance
+    rules:
+      - alert: HighAPIResponseTime
+        expr: histogram_quantile(0.95, rate(assets_module_api_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: assets-module
+          category: performance
+        annotations:
+          summary: 'High API response time detected'
+          description: '95th percentile API response time is {{ $value }}s for {{ $labels.method }} {{ $labels.route }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/high-api-response-time'
+
+      - alert: HighAPIErrorRate
+        expr: rate(assets_module_api_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: assets-module
+          category: reliability
+        annotations:
+          summary: 'High API error rate detected'
+          description: 'API error rate is {{ $value }} errors/sec for {{ $labels.method }} {{ $labels.route }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/high-api-error-rate'
+
+      - alert: DatabaseQuerySlow
+        expr: histogram_quantile(0.95, rate(assets_module_db_query_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: assets-module
+          category: performance
+        annotations:
+          summary: 'Slow database queries detected'
+          description: '95th percentile database query time is {{ $value }}s for {{ $labels.operation }} on {{ $labels.table }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/slow-database-queries'
+
+      - alert: DatabaseErrors
+        expr: rate(assets_module_db_query_errors_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          service: assets-module
+          category: reliability
+        annotations:
+          summary: 'Database query errors detected'
+          description: 'Database error rate is {{ $value }} errors/sec for {{ $labels.operation }} on {{ $labels.table }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/database-errors'
+
+  - name: assets-module-cache
+    rules:
+      - alert: LowCacheHitRate
+        expr: assets_module_cache_hit_rate < 70
+        for: 10m
+        labels:
+          severity: warning
+          service: assets-module
+          category: performance
+        annotations:
+          summary: 'Low cache hit rate detected'
+          description: 'Cache hit rate is {{ $value }}% for {{ $labels.cache_type }} cache'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/low-cache-hit-rate'
+
+      - alert: CacheOperationErrors
+        expr: rate(assets_module_cache_operations_total{result="failure"}[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: assets-module
+          category: reliability
+        annotations:
+          summary: 'Cache operation errors detected'
+          description: 'Cache operation error rate is {{ $value }} errors/sec for {{ $labels.cache_type }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/cache-operation-errors'
+
+  - name: assets-module-validation
+    rules:
+      - alert: ValidationErrors
+        expr: rate(assets_module_validation_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: assets-module
+          category: business-logic
+        annotations:
+          summary: 'High validation error rate detected'
+          description: 'Validation error rate is {{ $value }} errors/sec for {{ $labels.validator_type }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/validation-errors'
+
+      - alert: SlowValidation
+        expr: histogram_quantile(0.95, rate(assets_module_validation_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: assets-module
+          category: performance
+        annotations:
+          summary: 'Slow validation detected'
+          description: '95th percentile validation time is {{ $value }}s for {{ $labels.validator_type }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/slow-validation'
+
+      - alert: ValidationFailureRate
+        expr: rate(assets_module_validations_total{result="failure"}[5m]) / rate(assets_module_validations_total[5m]) > 0.2
+        for: 5m
+        labels:
+          severity: critical
+          service: assets-module
+          category: business-logic
+        annotations:
+          summary: 'High validation failure rate detected'
+          description: 'Validation failure rate is {{ $value | humanizePercentage }} for {{ $labels.validator_type }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/validation-failure-rate'
+
+  - name: assets-module-security
+    rules:
+      - alert: CriticalSecurityEvents
+        expr: rate(assets_module_security_events_total{severity="critical"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: assets-module
+          category: security
+        annotations:
+          summary: 'Critical security events detected'
+          description: '{{ $value }} critical security events/sec of type {{ $labels.event_type }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/critical-security-events'
+
+      - alert: HighAccessDenials
+        expr: rate(assets_module_access_denials_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: assets-module
+          category: security
+        annotations:
+          summary: 'High access denial rate detected'
+          description: 'Access denial rate is {{ $value }} denials/sec for {{ $labels.resource }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/high-access-denials'
+
+      - alert: EncryptionFailures
+        expr: rate(assets_module_encryption_operations_total{result="failure"}[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          service: assets-module
+          category: security
+        annotations:
+          summary: 'Encryption operation failures detected'
+          description: 'Encryption failure rate is {{ $value }} failures/sec for {{ $labels.operation }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/encryption-failures'
+
+  - name: assets-module-business
+    rules:
+      - alert: LowCapabilityUpdateRate
+        expr: rate(assets_module_capability_updates_total[1h]) < 0.001
+        for: 1h
+        labels:
+          severity: info
+          service: assets-module
+          category: business-logic
+        annotations:
+          summary: 'Low capability update activity'
+          description: 'Capability update rate is {{ $value }} updates/sec - system may be idle'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/low-capability-updates'
+
+      - alert: HighTemplateApplicationFailures
+        expr: rate(assets_module_template_applications_total{result="failure"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: assets-module
+          category: business-logic
+        annotations:
+          summary: 'High template application failure rate'
+          description: 'Template application failure rate is {{ $value }} failures/sec'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/template-application-failures'
+
+      - alert: SystemResourceUsage
+        expr: process_resident_memory_bytes > 2e9
+        for: 10m
+        labels:
+          severity: warning
+          service: assets-module
+          category: resource
+        annotations:
+          summary: 'High memory usage detected'
+          description: 'Memory usage is {{ $value | humanizeBytes }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/high-memory-usage'
+
+  - name: assets-module-health
+    rules:
+      - alert: ServiceDown
+        expr: up{job="assets-module"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: assets-module
+          category: availability
+        annotations:
+          summary: 'Assets module service is down'
+          description: 'Assets module service has been down for more than 1 minute'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/service-down'
+
+      - alert: HealthCheckFailing
+        expr: assets_module_health_check_status != 1
+        for: 5m
+        labels:
+          severity: critical
+          service: assets-module
+          category: availability
+        annotations:
+          summary: 'Health check failing'
+          description: 'Health check for {{ $labels.component }} is failing'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/health-check-failing'
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.99, rate(assets_module_api_request_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: critical
+          service: assets-module
+          category: performance
+        annotations:
+          summary: 'Very high API response time'
+          description: '99th percentile API response time is {{ $value }}s'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/very-high-response-time'
+
+  - name: assets-module-capacity
+    rules:
+      - alert: HighStandCount
+        expr: assets_module_stands_total > 10000
+        for: 5m
+        labels:
+          severity: info
+          service: assets-module
+          category: capacity
+        annotations:
+          summary: 'High number of stands detected'
+          description: 'Total stands count is {{ $value }} for organization {{ $labels.organization_id }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/high-stand-count'
+
+      - alert: HighTemplateCount
+        expr: assets_module_templates_total > 1000
+        for: 5m
+        labels:
+          severity: info
+          service: assets-module
+          category: capacity
+        annotations:
+          summary: 'High number of templates detected'
+          description: 'Total templates count is {{ $value }} for organization {{ $labels.organization_id }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/high-template-count'
+
+      - alert: HighMaintenanceBacklog
+        expr: assets_module_maintenance_records_total{status="scheduled"} > 500
+        for: 30m
+        labels:
+          severity: warning
+          service: assets-module
+          category: business-logic
+        annotations:
+          summary: 'High maintenance backlog detected'
+          description: 'Scheduled maintenance records count is {{ $value }} for organization {{ $labels.organization_id }}'
+          runbook_url: 'https://docs.capacity-planner.com/runbooks/high-maintenance-backlog'

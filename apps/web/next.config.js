@@ -10,6 +10,16 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
+  // Leaflet configuration - handle SSR issues
+  transpilePackages: ['leaflet', 'react-leaflet'],
+  images: {
+    domains: [
+      'tile.openstreetmap.org',
+      'a.tile.openstreetmap.org',
+      'b.tile.openstreetmap.org',
+      'c.tile.openstreetmap.org',
+    ],
+  },
 };
 
 const plugins = [

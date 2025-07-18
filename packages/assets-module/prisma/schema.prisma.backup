@@ -1,0 +1,98 @@
+// Prisma schema for assets-module
+// Manages aircraft stands and other assets in assets schema
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/.prisma/assets-module"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["assets"]
+}
+
+model Stand {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  code           String   // e.g., "A1", "B15"
+  name           String   // e.g., "Alpha 1"
+  terminal       String?  // Terminal assignment
+  status         String   @default("operational") // 'operational', 'maintenance', 'closed'
+  
+  // Capabilities as JSON
+  capabilities   Json     @default("{}") // aircraftSize, hasPowerSupply, hasGroundSupport, maxWeight
+  
+  // Geometry for map display (GeoJSON format)
+  geometry       Json?
+  
+  // Location details
+  latitude       Float?
+  longitude      Float?
+  
+  // Additional metadata
+  metadata       Json     @default("{}")
+  
+  // Audit fields
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String?  @map("created_by")
+  updatedBy      String?  @map("updated_by")
+
+  @@unique([organizationId, code])
+  @@map("stands")
+  @@schema("assets")
+}
+
+model StandStatusHistory {
+  id         String   @id @default(uuid())
+  standId    String   @map("stand_id")
+  fromStatus String   @map("from_status")
+  toStatus   String   @map("to_status")
+  reason     String?
+  changedBy  String   @map("changed_by")
+  changedAt  DateTime @default(now()) @map("changed_at")
+
+  @@map("stand_status_history")
+  @@schema("assets")
+}
+
+model AssetType {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  key            String   // 'stand', 'gate', 'baggage_belt', etc.
+  name           String
+  description    String?
+  schema         Json     // JSON schema for asset properties
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String?  @map("created_by")
+  updatedBy      String?  @map("updated_by")
+
+  @@unique([organizationId, key])
+  @@map("asset_types")
+  @@schema("assets")
+}
+
+// Generic assets table for future asset types
+model Asset {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  assetTypeId    String   @map("asset_type_id")
+  code           String
+  name           String
+  status         String   @default("operational")
+  properties     Json     @default("{}") // Dynamic properties based on asset type
+  geometry       Json?
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String?  @map("created_by")
+  updatedBy      String?  @map("updated_by")
+
+  @@unique([organizationId, assetTypeId, code])
+  @@map("assets")
+  @@schema("assets")
+}

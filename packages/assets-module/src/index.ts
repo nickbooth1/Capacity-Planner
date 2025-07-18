@@ -6,7 +6,7 @@ export interface Stand extends BaseEntity {
   name: string; // e.g., "Alpha 1"
   status: StandStatus;
   capabilities: StandCapabilities;
-  geometry?: GeoJSON.Geometry; // For map display
+  geometry?: any; // For map display - GeoJSON.Geometry
 }
 
 export enum StandStatus {
@@ -24,7 +24,7 @@ export interface StandCapabilities {
 
 export enum AircraftSizeCategory {
   A = 'A',
-  B = 'B', 
+  B = 'B',
   C = 'C',
   D = 'D',
   E = 'E',
@@ -46,3 +46,16 @@ export interface StandFilters {
   aircraftSize?: AircraftSizeCategory;
   search?: string;
 }
+
+// Export services and validators
+export { CapabilityValidationEngine } from './validation/capability-validation.engine';
+export { MetricsService } from './monitoring/metrics.service';
+export { HealthService } from './monitoring/health.service';
+export { EncryptionService } from './security/encryption.service';
+export { TimelineService } from './services/timeline.service';
+export type {
+  TimelineDataPoint,
+  TimelineEvent,
+  TimelineQuery,
+  BulkTimelineQuery,
+} from './services/timeline.service';

@@ -23,6 +23,9 @@ model Organization {
   createdBy String?
   updatedBy String?
 
+  // Relations
+  airportConfiguration AirportConfiguration?
+
   @@map("organizations")
   @@schema("public")
 }
@@ -40,5 +43,60 @@ model User {
   updatedBy      String?
 
   @@map("users")
+  @@schema("public")
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  entityType     String   @map("entity_type") // 'organization', 'user', 'entitlement', etc.
+  entityId       String   @map("entity_id")
+  action         String   // 'created', 'updated', 'deleted', 'login', etc.
+  changes        Json?    // JSON object with field changes
+  performedBy    String   @map("performed_by") // user email
+  performedAt    DateTime @default(now()) @map("performed_at")
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  organizationId String?  @map("organization_id") // optional, for filtering
+
+  @@index([entityType, entityId])
+  @@index([performedBy])
+  @@index([performedAt])
+  @@index([organizationId])
+  @@map("audit_logs")
+  @@schema("public")
+}
+
+// Airport configuration for managing terminals, piers, and infrastructure
+model AirportConfiguration {
+  id             String   @id @default(uuid())
+  organizationId String   @unique @map("organization_id")
+  
+  // Terminal structure - Array of terminal objects with piers
+  // Example: [{ id: "t1", code: "T1", name: "Terminal 1", piers: [...] }]
+  terminals      Json     
+  
+  // Airport metadata
+  icaoCode       String?  @map("icao_code") // 4-letter ICAO code (e.g., "EGCC" for Manchester)
+  iataCode       String?  @map("iata_code") // 3-letter IATA code (e.g., "MAN")
+  timezone       String?  // IANA timezone (e.g., "Europe/London")
+  
+  // Operational infrastructure
+  runways        Json?    // Array of runway configurations
+  taxiways       Json?    // Taxiway network structure
+  
+  // Additional metadata
+  metadata       Json     @default("{}")
+  
+  // Audit and versioning fields
+  version        Int      @default(1) // For optimistic locking
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String?  @map("created_by")
+  updatedBy      String?  @map("updated_by")
+  
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  @@map("airport_configurations")
   @@schema("public")
 }
