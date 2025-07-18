@@ -1,5 +1,5 @@
 # Production Dockerfile for API Gateway
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@10.13.1 --activate
@@ -33,7 +33,7 @@ RUN pnpm prisma:generate
 RUN pnpm nx build api-gateway
 
 # Production stage
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 RUN apk add --no-cache libc6-compat curl
 
